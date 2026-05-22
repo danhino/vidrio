@@ -118,13 +118,16 @@ supabase db push
 
 ## Transparency feature
 
-- **CSS approach** (all browsers): sets `document.body.style.opacity`
-- **Picture-in-Picture** (Chrome/Edge, AI Pro only): uses Document PiP API to float the note over other apps
+Web transparency works differently from desktop: the browser cannot show the OS desktop behind the window, so instead:
+
+- **CSS approach** (all browsers): opacity is applied to the **editor content area only** (toolbar/tab bar stay solid). An animated gradient background renders beneath the editor so transparency has a visual payoff — the gradient shows through as the editor fades.
+- **Picture-in-Picture** (Chrome/Edge, AI Pro only): uses Document PiP API to float the note as a floating window over other apps.
 
 Tier behavior:
-- Anonymous: 3-second preview, then locked
-- Free: 30-second preview every 10 minutes
-- Basic+: Full control, persists in settings
+- Anonymous: 3-second preview, then snaps back to 100% — banner: "Sign up free for 30-second previews"
+- Free: 30-second preview with live countdown banner, fades back — banner: "Upgrade to keep it"
+- Basic+: Full opacity slider (20–100%), eye icon quick-toggle, persists in settings
+- AI Pro: All of Basic + PiP button (shown in Chrome/Edge only)
 
 ---
 

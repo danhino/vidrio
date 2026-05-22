@@ -252,6 +252,8 @@ function HeroSection() {
 function DemoSection() {
   const [demoOpacity, setDemoOpacity] = useState(85)
 
+  const blurAmount = Math.round((100 - demoOpacity) / 10)
+
   return (
     <section id="demo" className="py-24 px-6 bg-gradient-to-b from-[#0a0a0f] to-[#0d0d1a]">
       <div className="max-w-4xl mx-auto">
@@ -271,22 +273,68 @@ function DemoSection() {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
         >
-          <div
-            className="absolute inset-0"
-            style={{ background: 'linear-gradient(135deg, #1a1a3e 0%, #0d2137 50%, #1a1a0a 100%)' }}
-          >
-            <div className="p-8 grid grid-cols-3 gap-4 opacity-60">
-              {[...Array(9)].map((_, i) => (
-                <div key={i} className="h-16 rounded-lg bg-white/10" />
-              ))}
+          {/* Colorful simulated background — visible through the transparent note */}
+          <div className="absolute inset-0 bg-[#0f1117] overflow-hidden">
+            <div className="p-6 space-y-3">
+              {/* Fake app toolbar */}
+              <div className="flex items-center gap-2 mb-2 pb-3 border-b border-white/10">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[#F38BA8]/80" />
+                  <div className="w-3 h-3 rounded-full bg-[#F9B742]/80" />
+                  <div className="w-3 h-3 rounded-full bg-[#A6E3A1]/80" />
+                </div>
+                <div className="h-4 w-48 rounded bg-white/10 ml-2" />
+              </div>
+              {/* Fake metric cards */}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Revenue', value: '$48.2k', color: '#A6E3A1' },
+                  { label: 'Users', value: '2,841', color: '#89B4FA' },
+                  { label: 'Growth', value: '+24%', color: '#CBA6F7' },
+                ].map((card) => (
+                  <div key={card.label} className="rounded-lg p-3" style={{ background: card.color + '15', border: `1px solid ${card.color}30` }}>
+                    <div className="text-xs mb-1" style={{ color: card.color + 'aa' }}>{card.label}</div>
+                    <div className="text-sm font-semibold" style={{ color: card.color }}>{card.value}</div>
+                  </div>
+                ))}
+              </div>
+              {/* Fake chart bars */}
+              <div className="flex items-end gap-1.5 h-14 px-1 pt-2">
+                {[40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 50, 95].map((h, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 rounded-sm"
+                    style={{
+                      height: `${h}%`,
+                      background: i % 3 === 0 ? '#89B4FA60' : i % 3 === 1 ? '#CBA6F750' : '#A6E3A140',
+                    }}
+                  />
+                ))}
+              </div>
+              {/* Fake data rows */}
+              <div className="space-y-2 pt-1">
+                {[
+                  { color: '#F38BA8', w: '85%' },
+                  { color: '#FAB387', w: '62%' },
+                  { color: '#89B4FA', w: '91%' },
+                ].map((row, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: row.color }} />
+                    <div className="h-2 rounded" style={{ width: row.w, background: row.color + '35' }} />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
+          {/* Note card — opacity and backdrop-filter controlled by slider */}
           <div
-            className="relative m-8 rounded-xl border border-white/20 backdrop-blur-sm p-6 transition-all duration-150"
+            className="relative m-8 rounded-xl border border-white/20 p-6"
             style={{
               opacity: demoOpacity / 100,
-              background: `rgba(30, 30, 46, ${0.4 + (demoOpacity / 100) * 0.5})`,
+              background: `rgba(30, 30, 46, ${0.3 + (demoOpacity / 100) * 0.55})`,
+              backdropFilter: blurAmount > 0 ? `blur(${blurAmount}px)` : 'none',
+              transition: 'opacity 0.1s ease, backdrop-filter 0.1s ease, background 0.1s ease',
             }}
           >
             <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/10">
@@ -304,6 +352,7 @@ function DemoSection() {
             </div>
           </div>
 
+          {/* Controls — always fully visible, outside the note card */}
           <div className="relative px-8 pb-8 flex flex-col items-center gap-3">
             <div className="flex items-center gap-4 w-full max-w-sm">
               <Eye className="w-4 h-4 text-[#89B4FA] shrink-0" />

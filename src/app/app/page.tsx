@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useEffect, useState, useRef, useCallback, Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import { useUser } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -49,7 +49,7 @@ function usePlan(): string {
   return plan
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+// ── Banners ───────────────────────────────────────────────────────────────────
 
 function UpgradeBanner({ onClose }: { onClose: () => void }) {
   return (
@@ -66,6 +66,20 @@ function UpgradeBanner({ onClose }: { onClose: () => void }) {
   )
 }
 
+function CountdownBanner({ seconds }: { seconds: number }) {
+  return (
+    <motion.div
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-xl bg-[#89B4FA] text-[#1E1E2E] text-sm font-medium shadow-xl"
+      initial={{ y: 60, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 60, opacity: 0 }}
+    >
+      Transparency ending in {seconds}s
+      <a href="/pricing" className="underline">Upgrade to keep it</a>
+    </motion.div>
+  )
+}
+
 function SignUpBanner({ onClose }: { onClose: () => void }) {
   return (
     <motion.div
@@ -74,12 +88,14 @@ function SignUpBanner({ onClose }: { onClose: () => void }) {
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 60, opacity: 0 }}
     >
-      Sign up free to unlock more transparency time
+      Sign up free for 30-second transparency previews
       <a href="/sign-up" className="text-[#89B4FA] underline">Sign up</a>
       <button onClick={onClose} className="ml-2 hover:opacity-70 text-[#A6ADC8]"><X className="w-4 h-4" /></button>
     </motion.div>
   )
 }
+
+// ── Tab bar ───────────────────────────────────────────────────────────────────
 
 function TabBar({ plan }: { plan: string }) {
   const { tabs, activeTabId, addTab, removeTab, setActiveTab } = useEditorStore()
@@ -87,7 +103,7 @@ function TabBar({ plan }: { plan: string }) {
 
   return (
     <div
-      className="flex items-center overflow-x-auto border-b"
+      className="flex items-center overflow-x-auto border-b shrink-0"
       style={{ background: 'var(--toolbar-bg)', borderColor: 'var(--border)' }}
     >
       {tabs.map(tab => (
@@ -136,10 +152,31 @@ function TabBar({ plan }: { plan: string }) {
   )
 }
 
-function Toolbar({ plan, onSave }: { plan: string; onSave: () => void }) {
-  const { tabs, activeTabId, updateTab, layout, setLayout, theme, setTheme, font, setFont, fontSize, setFontSize, workspacePanelOpen, setWorkspacePanelOpen } = useEditorStore()
-  const { opacity, handleOpacityChange } = useTransparency(plan)
+// ── Toolbar ───────────────────────────────────────────────────────────────────
+
+function Toolbar({
+  plan,
+  onSave,
+  opacity,
+  onOpacityChange,
+}: {
+  plan: string
+  onSave: () => void
+  opacity: number
+  onOpacityChange: (val: number) => void
+}) {
+  const {
+    tabs, activeTabId, updateTab, layout, setLayout,
+    theme, setTheme, fontSize, setFontSize,
+    workspacePanelOpen, setWorkspacePanelOpen,
+  } = useEditorStore()
   const activeTab = tabs.find(t => t.id === activeTabId)
+  const prevOpacityRef = useRef<number>(85)
+  const [supportsPiP, setSupportsPiP] = useState(false)
+
+  useEffect(() => {
+    setSupportsPiP('documentPictureInPicture' in window)
+  }, [])
 
   const THEMES: Theme[] = ['dark', 'light', 'blue', 'sepia', 'green', 'glass']
   const LAYOUTS: { value: LayoutType; icon: React.ReactNode; label: string }[] = [
@@ -149,19 +186,52 @@ function Toolbar({ plan, onSave }: { plan: string; onSave: () => void }) {
     { value: '2x2', icon: <Grid2x2 className="w-3.5 h-3.5" />, label: '2x2' },
   ]
 
+  function toggleOpacity() {
+    if (opacity < 100) {
+      prevOpacityRef.current = opacity
+      onOpacityChange(100)
+    } else {
+      onOpacityChange(prevOpacityRef.current)
+    }
+  }
+
   async function handlePiP() {
-    if (!('documentPictureInPicture' in window)) return
+    if (!supportsPiP) return
+    if (plan !== 'pro') {
+      alert('Picture-in-Picture is available in AI Pro. Upgrade at /pricing')
+      return
+    }
     try {
-      const pip = await (window as unknown as { documentPictureInPicture: { requestWindow: (o: object) => Promise<Window> } })
-        .documentPictureInPicture.requestWindow({ width: 640, height: 480 })
-      pip.document.body.style.cssText = 'margin:0;background:#1E1E2E;color:#CDD6F4;font-family:sans-serif;padding:16px;'
-      pip.document.body.innerHTML = `<pre style="white-space:pre-wrap;font-size:14px;">${activeTab?.content ?? ''}</pre>`
+      const pip = await (window as unknown as {
+        documentPictureInPicture: { requestWindow: (o: object) => Promise<Window> }
+      }).documentPictureInPicture.requestWindow({
+        width: 600,
+        height: 400,
+        disallowReturnToOpener: false,
+      })
+      // Copy stylesheets so theme variables work in pip window
+      ;[...document.styleSheets].forEach(sheet => {
+        try {
+          const cssRules = [...sheet.cssRules].map(r => r.cssText).join('')
+          const style = document.createElement('style')
+          style.textContent = cssRules
+          pip.document.head.appendChild(style)
+        } catch { }
+      })
+      const currentTheme = document.documentElement.getAttribute('data-theme') ?? 'dark'
+      pip.document.documentElement.setAttribute('data-theme', currentTheme)
+      pip.document.body.style.cssText =
+        'margin:0;padding:16px;height:100vh;overflow:auto;background:var(--app-bg);color:var(--text);'
+      const content = activeTab?.content ?? ''
+      pip.document.body.innerHTML = `<pre style="white-space:pre-wrap;font-family:monospace;font-size:14px;line-height:1.6;">${
+        content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      }</pre>`
     } catch { /* user cancelled */ }
   }
 
   return (
     <div
-      className="flex items-center gap-2 px-3 py-2 border-b overflow-x-auto"
+      className="flex items-center gap-2 px-3 py-2 border-b overflow-x-auto shrink-0"
       style={{ background: 'var(--toolbar-bg)', borderColor: 'var(--border)' }}
     >
       {/* Workspace panel toggle */}
@@ -212,28 +282,38 @@ function Toolbar({ plan, onSave }: { plan: string; onSave: () => void }) {
 
       <div className="flex-1" />
 
-      {/* Opacity slider */}
-      <div className="flex items-center gap-2 shrink-0">
-        <Eye className="w-4 h-4 shrink-0" style={{ color: 'var(--text-secondary)' }} />
+      {/* Opacity slider — eye icon toggles show/hide */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <button
+          onClick={toggleOpacity}
+          className="p-0.5 rounded hover:opacity-70 transition-opacity"
+          style={{ color: opacity < 100 ? 'var(--accent)' : 'var(--text-secondary)' }}
+          title={opacity < 100 ? 'Restore full opacity' : 'Toggle transparency'}
+        >
+          {opacity < 100 ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+        </button>
         <input
           type="range"
-          min={10}
+          min={20}
           max={100}
+          step={5}
           value={opacity}
-          onChange={e => handleOpacityChange(Number(e.target.value))}
+          onChange={e => onOpacityChange(Number(e.target.value))}
           className="w-24 accent-[#89B4FA]"
-          title={`Opacity ${opacity}%`}
+          title="Drag to make notes transparent"
         />
         <span className="text-xs w-8" style={{ color: 'var(--text-secondary)' }}>{opacity}%</span>
       </div>
 
-      {/* PiP (Pro only) */}
-      {plan === 'pro' && (
+      {/* PiP — shown when browser supports it, locked for non-Pro */}
+      {supportsPiP && (
         <button
           onClick={handlePiP}
-          className="p-1.5 rounded hover:opacity-70 transition-opacity hidden md:flex"
+          className={`p-1.5 rounded transition-opacity hidden md:flex items-center ${
+            plan === 'pro' ? 'hover:opacity-70' : 'opacity-30 cursor-not-allowed'
+          }`}
           style={{ color: 'var(--text-secondary)' }}
-          title="Picture-in-Picture"
+          title={plan === 'pro' ? 'Picture-in-Picture' : 'Picture-in-Picture — AI Pro only'}
         >
           <ExternalLink className="w-4 h-4" />
         </button>
@@ -278,6 +358,8 @@ function Toolbar({ plan, onSave }: { plan: string; onSave: () => void }) {
     </div>
   )
 }
+
+// ── AI toolbar ────────────────────────────────────────────────────────────────
 
 function AIToolbar({ plan, tabId }: { plan: string; tabId: string }) {
   const { tabs, updateTab } = useEditorStore()
@@ -330,6 +412,8 @@ function AIToolbar({ plan, tabId }: { plan: string; tabId: string }) {
   )
 }
 
+// ── Editor pane ───────────────────────────────────────────────────────────────
+
 function EditorPane({ tab, plan }: { tab: NoteTab; plan: string }) {
   const { updateTab, theme, font, fontSize } = useEditorStore()
 
@@ -358,6 +442,8 @@ function EditorPane({ tab, plan }: { tab: NoteTab; plan: string }) {
   )
 }
 
+// ── Pane system ───────────────────────────────────────────────────────────────
+
 function PaneSystem({ plan }: { plan: string }) {
   const { tabs, activeTabId, layout } = useEditorStore()
   const activeTab = tabs.find(t => t.id === activeTabId) ?? tabs[0]
@@ -372,7 +458,6 @@ function PaneSystem({ plan }: { plan: string }) {
   }
 
   const visibleTabs = tabs.slice(0, layout === '2x2' ? 4 : 2)
-
   const gridClass = {
     'side-by-side': 'grid-cols-2',
     'top-bottom': 'grid-rows-2',
@@ -389,6 +474,8 @@ function PaneSystem({ plan }: { plan: string }) {
     </div>
   )
 }
+
+// ── Workspace panel ───────────────────────────────────────────────────────────
 
 function WorkspacePanel({ open, tabs, activeTabId, setActiveTab, updateTab, removeTab }: {
   open: boolean
@@ -447,6 +534,7 @@ function WorkspacePanel({ open, tabs, activeTabId, setActiveTab, updateTab, remo
 export default function AppPage() {
   const plan = usePlan()
   const [saveOpen, setSaveOpen] = useState(false)
+  const { opacity, handleOpacityChange, countdownSeconds } = useTransparency(plan)
   const {
     tabs, activeTabId, setActiveTab, updateTab, removeTab,
     workspacePanelOpen, setWorkspacePanelOpen,
@@ -470,18 +558,47 @@ export default function AppPage() {
 
   return (
     <div
-      className="flex flex-col h-screen overflow-hidden"
-      style={{ background: 'var(--app-bg)', color: 'var(--text)' }}
+      className="flex flex-col h-screen overflow-hidden relative"
+      style={{ color: 'var(--text)' }}
     >
-      {/* Main toolbar */}
-      <Toolbar plan={plan} onSave={() => setSaveOpen(true)} />
+      {/*
+        Animated gradient background — always rendered behind the editor area.
+        When the editor content div's opacity drops, this gradient becomes visible,
+        giving the "glass overlay on a colorful world" effect on web.
+      */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(135deg, #0a0a1a 0%, #0d1b2a 25%, #0a0a1a 50%, #1a0a2a 75%, #0a0a1a 100%)',
+          backgroundSize: '400% 400%',
+          animation: 'gradientShift 8s ease infinite',
+        }}
+      />
 
-      {/* Tab bar */}
+      {/* Toolbar — always fully opaque, sits above the gradient */}
+      <Toolbar
+        plan={plan}
+        onSave={() => setSaveOpen(true)}
+        opacity={opacity}
+        onOpacityChange={handleOpacityChange}
+      />
+
+      {/* Tab bar — always fully opaque */}
       <TabBar plan={plan} />
 
-      {/* Body */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Workspace panel (Basic+ only) */}
+      {/*
+        Editor content area — opacity applied HERE, not to body.
+        Toolbar/TabBar stay solid so the user can always control the app.
+        As opacity drops, the animated gradient above shows through.
+      */}
+      <div
+        className="flex flex-1 overflow-hidden"
+        style={{
+          background: 'var(--app-bg)',
+          opacity: opacity / 100,
+          transition: 'opacity 0.15s ease',
+        }}
+      >
         {(plan === 'basic' || plan === 'pro') && (
           <WorkspacePanel
             open={workspacePanelOpen}
@@ -492,8 +609,6 @@ export default function AppPage() {
             removeTab={removeTab}
           />
         )}
-
-        {/* Editor panes */}
         <PaneSystem plan={plan} />
       </div>
 
@@ -514,7 +629,12 @@ export default function AppPage() {
 
       {/* Banners */}
       <AnimatePresence>
-        {showUpgradeBanner && (
+        {/* Countdown during free 30-second preview */}
+        {countdownSeconds !== null && countdownSeconds > 0 && (
+          <CountdownBanner seconds={countdownSeconds} />
+        )}
+        {/* Upgrade nudge shown after preview ends */}
+        {showUpgradeBanner && !countdownSeconds && (
           <UpgradeBanner onClose={() => setShowUpgradeBanner(false)} />
         )}
         {showSignUpBanner && (

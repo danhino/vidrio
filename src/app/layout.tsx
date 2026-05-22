@@ -41,7 +41,7 @@ export default function RootLayout({
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
           <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         </head>
-        <body className="min-h-full flex flex-col bg-[#0a0a0f] text-[#CDD6F4]">
+        <body className="min-h-full flex flex-col bg-[#0a0a0f] text-[#CDD6F4]" suppressHydrationWarning>
           {children}
         </body>
       </html>
