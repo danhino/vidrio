@@ -1,0 +1,242 @@
+@import "tailwindcss";
+
+/* ── Dark theme (default) ── */
+:root,
+[data-theme="dark"] {
+  --app-bg: #1E1E2E;
+  --panel-bg: #2A2A3E;
+  --toolbar-bg: #16161E;
+  --tab-bg: #2A2A3E;
+  --tab-selected-bg: #3D3D5C;
+  --tab-hover-bg: #333350;
+  --editor-bg: #1E1E2E;
+  --editor-fg: #CDD6F4;
+  --accent: #89B4FA;
+  --accent-hover: #74C7EC;
+  --text: #CDD6F4;
+  --text-secondary: #A6ADC8;
+  --border: #45475A;
+  --btn-bg: #313244;
+  --btn-hover: #45475A;
+  --btn-active: #585B70;
+  --danger: #F38BA8;
+  --success: #A6E3A1;
+  --warning: #F9B742;
+  --splitter: #313244;
+  --scrollbar-bg: #2A2A3E;
+  --scrollbar-thumb: #45475A;
+  --titlebar-bg: #16161E;
+  --subtle-text: #A6ADC8;
+}
+
+/* ── Light theme ── */
+[data-theme="light"] {
+  --app-bg: #F5F5F7;
+  --panel-bg: #FFFFFF;
+  --toolbar-bg: #E8E8ED;
+  --tab-bg: #FFFFFF;
+  --tab-selected-bg: #DDEEFF;
+  --tab-hover-bg: #EEF5FF;
+  --editor-bg: #FFFFFF;
+  --editor-fg: #1C1C1E;
+  --accent: #0071E3;
+  --accent-hover: #0077ED;
+  --text: #1C1C1E;
+  --text-secondary: #6E6E73;
+  --border: #D2D2D7;
+  --btn-bg: #E8E8ED;
+  --btn-hover: #D2D2D7;
+  --btn-active: #C7C7CC;
+  --danger: #FF3B30;
+  --success: #34C759;
+  --warning: #D68910;
+  --splitter: #D2D2D7;
+  --scrollbar-bg: #F5F5F7;
+  --scrollbar-thumb: #C7C7CC;
+  --titlebar-bg: #E8E8ED;
+  --subtle-text: #6E6E73;
+}
+
+/* ── Blue theme ── */
+[data-theme="blue"] {
+  --app-bg: #0A1628;
+  --panel-bg: #0F2044;
+  --toolbar-bg: #071020;
+  --tab-bg: #0F2044;
+  --tab-selected-bg: #1A3A6E;
+  --tab-hover-bg: #142E58;
+  --editor-bg: #0A1628;
+  --editor-fg: #BFD7FF;
+  --accent: #4D9FFF;
+  --accent-hover: #70B5FF;
+  --text: #BFD7FF;
+  --text-secondary: #7BA7D8;
+  --border: #1A3A6E;
+  --btn-bg: #0F2044;
+  --btn-hover: #1A3A6E;
+  --btn-active: #234A88;
+  --danger: #FF6B8A;
+  --success: #5CE8A0;
+  --warning: #F9C74F;
+  --splitter: #0F2044;
+  --scrollbar-bg: #0F2044;
+  --scrollbar-thumb: #1A3A6E;
+  --titlebar-bg: #071020;
+  --subtle-text: #7BA7D8;
+}
+
+/* ── Sepia theme ── */
+[data-theme="sepia"] {
+  --app-bg: #F5EDD8;
+  --panel-bg: #FDF6E3;
+  --toolbar-bg: #E8DCC8;
+  --tab-bg: #FDF6E3;
+  --tab-selected-bg: #EDD9A3;
+  --tab-hover-bg: #F5E8C8;
+  --editor-bg: #FDF6E3;
+  --editor-fg: #4A3728;
+  --accent: #8B6914;
+  --accent-hover: #A07820;
+  --text: #4A3728;
+  --text-secondary: #8B7355;
+  --border: #C8B89A;
+  --btn-bg: #EDD9A3;
+  --btn-hover: #E0C880;
+  --btn-active: #D4B860;
+  --danger: #C0392B;
+  --success: #27AE60;
+  --warning: #B7770D;
+  --splitter: #C8B89A;
+  --scrollbar-bg: #F5EDD8;
+  --scrollbar-thumb: #C8B89A;
+  --titlebar-bg: #E8DCC8;
+  --subtle-text: #8B7355;
+}
+
+/* ── Green theme ── */
+[data-theme="green"] {
+  --app-bg: #0D1F0D;
+  --panel-bg: #142814;
+  --toolbar-bg: #091409;
+  --tab-bg: #142814;
+  --tab-selected-bg: #1E4A1E;
+  --tab-hover-bg: #193C19;
+  --editor-bg: #0D1F0D;
+  --editor-fg: #98E898;
+  --accent: #4CAF50;
+  --accent-hover: #66BB6A;
+  --text: #98E898;
+  --text-secondary: #5B8C5B;
+  --border: #1E4A1E;
+  --btn-bg: #142814;
+  --btn-hover: #1E4A1E;
+  --btn-active: #285A28;
+  --danger: #FF6060;
+  --success: #80FF80;
+  --warning: #C8A72A;
+  --splitter: #142814;
+  --scrollbar-bg: #142814;
+  --scrollbar-thumb: #1E4A1E;
+  --titlebar-bg: #091409;
+  --subtle-text: #5B8C5B;
+}
+
+/* ── Glass theme (active when transparency is on) ── */
+[data-theme="glass"] {
+  --app-bg: rgba(10, 10, 20, 0.25);
+  --panel-bg: rgba(255, 255, 255, 0.08);
+  --toolbar-bg: rgba(0, 0, 0, 0.35);
+  --tab-bg: rgba(255, 255, 255, 0.06);
+  --tab-selected-bg: rgba(255, 255, 255, 0.15);
+  --tab-hover-bg: rgba(255, 255, 255, 0.1);
+  --editor-bg: rgba(0, 0, 0, 0.2);
+  --editor-fg: #FFFFFF;
+  --accent: #89B4FA;
+  --accent-hover: #74C7EC;
+  --text: #FFFFFF;
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  --border: rgba(255, 255, 255, 0.15);
+  --btn-bg: rgba(255, 255, 255, 0.1);
+  --btn-hover: rgba(255, 255, 255, 0.18);
+  --btn-active: rgba(255, 255, 255, 0.25);
+  --danger: #F38BA8;
+  --success: #A6E3A1;
+  --warning: #F9B742;
+  --splitter: rgba(255, 255, 255, 0.1);
+  --scrollbar-bg: transparent;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+  --titlebar-bg: rgba(0, 0, 0, 0.4);
+  --subtle-text: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Base styles ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--app-bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), 'Segoe UI', system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+}
+
+/* ── Scrollbar styles ── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--btn-active);
+}
+
+/* ── Glass blur utility ── */
+.glass {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+}
+
+/* ── CodeMirror theme integration ── */
+.cm-editor {
+  background: var(--editor-bg) !important;
+  color: var(--editor-fg) !important;
+  height: 100%;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.cm-scroller {
+  font-family: var(--font-geist-mono), 'Consolas', 'Courier New', monospace;
+}
+
+.cm-focused {
+  outline: none !important;
+}
+
+.cm-line {
+  padding: 0 8px;
+}
+
+.cm-gutters {
+  background: var(--toolbar-bg) !important;
+  border-right: 1px solid var(--border) !important;
+  color: var(--text-secondary) !important;
+}
