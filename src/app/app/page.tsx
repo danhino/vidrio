@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback, Suspense } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useUser } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -15,7 +15,7 @@ import { FORMAT_LABELS, Format } from '@/utils/languageMap'
 
 const Editor = dynamic(() => import('@/components/Editor').then(m => ({ default: m.Editor })), {
   ssr: false,
-  loading: () => <div className="flex-1 bg-[var(--editor-bg)]" />,
+  loading: () => <div className="flex-1" />,
 })
 
 const SaveDialog = dynamic(() => import('@/components/SaveDialog').then(m => ({ default: m.SaveDialog })), {
@@ -104,7 +104,7 @@ function TabBar({ plan }: { plan: string }) {
   return (
     <div
       className="flex items-center overflow-x-auto border-b shrink-0"
-      style={{ background: 'var(--toolbar-bg)', borderColor: 'var(--border)' }}
+      style={{ background: 'rgba(10, 10, 20, 0.85)', backdropFilter: 'blur(8px)', borderColor: 'var(--border)' }}
     >
       {tabs.map(tab => (
         <motion.button
@@ -170,7 +170,7 @@ function Toolbar({
     theme, setTheme, fontSize, setFontSize,
     workspacePanelOpen, setWorkspacePanelOpen,
   } = useEditorStore()
-  const activeTab = tabs.find(t => t.id === activeTabId)
+  const activeTab = tabs.find(t => t.id === activeTabId) ?? tabs[0]
   const prevOpacityRef = useRef<number>(85)
   const [supportsPiP, setSupportsPiP] = useState(false)
 
@@ -231,130 +231,138 @@ function Toolbar({
 
   return (
     <div
-      className="flex items-center gap-2 px-3 py-2 border-b overflow-x-auto shrink-0"
-      style={{ background: 'var(--toolbar-bg)', borderColor: 'var(--border)' }}
+      className="flex items-center justify-between px-3 border-b shrink-0"
+      style={{ background: 'rgba(10, 10, 20, 0.85)', backdropFilter: 'blur(8px)', borderColor: 'var(--border)', height: '44px', minWidth: 0 }}
     >
-      {/* Workspace panel toggle */}
-      <button
-        onClick={() => setWorkspacePanelOpen(!workspacePanelOpen)}
-        className="p-1.5 rounded hover:opacity-70 transition-opacity hidden md:flex"
-        style={{ color: 'var(--text-secondary)' }}
-        title="Workspace panel"
-      >
-        <PanelLeft className="w-4 h-4" />
-      </button>
+      {/* ── LEFT GROUP ── */}
+      <div className="flex items-center gap-2 min-w-0 shrink-0">
+        <button
+          onClick={() => setWorkspacePanelOpen(!workspacePanelOpen)}
+          className="p-1.5 rounded hover:opacity-70 transition-opacity hidden md:flex shrink-0"
+          style={{ color: 'var(--text-secondary)' }}
+          title="Workspace panel"
+        >
+          <PanelLeft className="w-4 h-4" />
+        </button>
 
-      <div className="w-px h-4 shrink-0" style={{ background: 'var(--border)' }} />
+        <div className="w-px h-4 shrink-0 hidden md:block" style={{ background: 'var(--border)' }} />
 
-      {/* Format selector */}
-      {activeTab && (
+        {activeTab && (
+          <select
+            value={activeTab.format}
+            onChange={e => updateTab(activeTab.id, { format: e.target.value, isDirty: true })}
+            className="text-xs px-2 py-1 rounded border appearance-none cursor-pointer shrink-0"
+            style={{ background: 'var(--btn-bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
+          >
+            {Object.entries(FORMAT_LABELS).map(([val, label]) => (
+              <option key={val} value={val}>{label}</option>
+            ))}
+          </select>
+        )}
+
+        {(plan === 'basic' || plan === 'pro') && (
+          <div className="flex items-center gap-0.5 rounded border p-0.5 shrink-0" style={{ borderColor: 'var(--border)' }}>
+            {LAYOUTS.map(l => (
+              <button
+                key={l.value}
+                onClick={() => setLayout(l.value)}
+                title={l.label}
+                className="p-1 rounded transition-colors"
+                style={{
+                  background: layout === l.value ? 'var(--tab-selected-bg)' : 'transparent',
+                  color: layout === l.value ? 'var(--accent)' : 'var(--text-secondary)',
+                }}
+              >
+                {l.icon}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── RIGHT GROUP ── */}
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Opacity — eye toggles between 100 and last value */}
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={toggleOpacity}
+            className="p-0.5 rounded hover:opacity-70 transition-opacity"
+            style={{ color: opacity < 100 ? 'var(--accent)' : 'var(--text-secondary)' }}
+            title={opacity < 100 ? 'Restore full opacity' : 'Toggle transparency'}
+          >
+            {opacity < 100 ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+          <input
+            type="range"
+            min={20}
+            max={100}
+            step={5}
+            value={opacity}
+            onChange={e => onOpacityChange(Number(e.target.value))}
+            className="w-20 accent-[#89B4FA]"
+            title="Drag to make notes transparent"
+          />
+          <span className="text-xs w-7 text-right" style={{ color: 'var(--text-secondary)' }}>{opacity}%</span>
+        </div>
+
+        <div className="w-px h-4 shrink-0" style={{ background: 'var(--border)' }} />
+
+        {/* PiP — Chrome/Edge only, locked for non-Pro */}
+        {supportsPiP && (
+          <>
+            <button
+              onClick={handlePiP}
+              className={`p-1.5 rounded transition-opacity hidden md:flex items-center ${
+                plan === 'pro' ? 'hover:opacity-70' : 'opacity-30 cursor-not-allowed'
+              }`}
+              style={{ color: 'var(--text-secondary)' }}
+              title={plan === 'pro' ? 'Picture-in-Picture' : 'Picture-in-Picture — AI Pro only'}
+            >
+              <ExternalLink className="w-4 h-4" />
+            </button>
+            <div className="w-px h-4 shrink-0 hidden md:block" style={{ background: 'var(--border)' }} />
+          </>
+        )}
+
+        {/* Theme */}
         <select
-          value={activeTab.format}
-          onChange={e => updateTab(activeTab.id, { format: e.target.value, isDirty: true })}
+          value={theme}
+          onChange={e => setTheme(e.target.value as Theme)}
           className="text-xs px-2 py-1 rounded border appearance-none cursor-pointer"
           style={{ background: 'var(--btn-bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
         >
-          {Object.entries(FORMAT_LABELS).map(([val, label]) => (
-            <option key={val} value={val}>{label}</option>
+          {THEMES.map(t => (
+            <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
           ))}
         </select>
-      )}
 
-      {/* Layout selector (Basic+) */}
-      {(plan === 'basic' || plan === 'pro') && (
-        <div className="flex items-center gap-0.5 rounded border p-0.5" style={{ borderColor: 'var(--border)' }}>
-          {LAYOUTS.map(l => (
-            <button
-              key={l.value}
-              onClick={() => setLayout(l.value)}
-              title={l.label}
-              className="p-1 rounded transition-colors"
-              style={{
-                background: layout === l.value ? 'var(--tab-selected-bg)' : 'transparent',
-                color: layout === l.value ? 'var(--accent)' : 'var(--text-secondary)',
-              }}
-            >
-              {l.icon}
-            </button>
-          ))}
+        {/* Font size */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setFontSize(Math.max(10, fontSize - 1))}
+            className="px-1.5 py-0.5 rounded text-xs"
+            style={{ background: 'var(--btn-bg)', color: 'var(--text)' }}
+          >A-</button>
+          <span className="text-xs w-6 text-center" style={{ color: 'var(--text-secondary)' }}>{fontSize}</span>
+          <button
+            onClick={() => setFontSize(Math.min(28, fontSize + 1))}
+            className="px-1.5 py-0.5 rounded text-xs"
+            style={{ background: 'var(--btn-bg)', color: 'var(--text)' }}
+          >A+</button>
         </div>
-      )}
 
-      <div className="flex-1" />
+        <div className="w-px h-4 shrink-0" style={{ background: 'var(--border)' }} />
 
-      {/* Opacity slider — eye icon toggles show/hide */}
-      <div className="flex items-center gap-1.5 shrink-0">
+        {/* Save */}
         <button
-          onClick={toggleOpacity}
-          className="p-0.5 rounded hover:opacity-70 transition-opacity"
-          style={{ color: opacity < 100 ? 'var(--accent)' : 'var(--text-secondary)' }}
-          title={opacity < 100 ? 'Restore full opacity' : 'Toggle transparency'}
+          onClick={onSave}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all hover:scale-105"
+          style={{ background: 'var(--accent)', color: 'var(--titlebar-bg)' }}
         >
-          {opacity < 100 ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          <Save className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Save</span>
         </button>
-        <input
-          type="range"
-          min={20}
-          max={100}
-          step={5}
-          value={opacity}
-          onChange={e => onOpacityChange(Number(e.target.value))}
-          className="w-24 accent-[#89B4FA]"
-          title="Drag to make notes transparent"
-        />
-        <span className="text-xs w-8" style={{ color: 'var(--text-secondary)' }}>{opacity}%</span>
       </div>
-
-      {/* PiP — shown when browser supports it, locked for non-Pro */}
-      {supportsPiP && (
-        <button
-          onClick={handlePiP}
-          className={`p-1.5 rounded transition-opacity hidden md:flex items-center ${
-            plan === 'pro' ? 'hover:opacity-70' : 'opacity-30 cursor-not-allowed'
-          }`}
-          style={{ color: 'var(--text-secondary)' }}
-          title={plan === 'pro' ? 'Picture-in-Picture' : 'Picture-in-Picture — AI Pro only'}
-        >
-          <ExternalLink className="w-4 h-4" />
-        </button>
-      )}
-
-      {/* Theme selector */}
-      <select
-        value={theme}
-        onChange={e => setTheme(e.target.value as Theme)}
-        className="text-xs px-2 py-1 rounded border appearance-none cursor-pointer"
-        style={{ background: 'var(--btn-bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
-      >
-        {THEMES.map(t => (
-          <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
-        ))}
-      </select>
-
-      {/* Font size */}
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => setFontSize(Math.max(10, fontSize - 1))}
-          className="px-1.5 py-0.5 rounded text-xs"
-          style={{ background: 'var(--btn-bg)', color: 'var(--text)' }}
-        >A-</button>
-        <span className="text-xs w-6 text-center" style={{ color: 'var(--text-secondary)' }}>{fontSize}</span>
-        <button
-          onClick={() => setFontSize(Math.min(28, fontSize + 1))}
-          className="px-1.5 py-0.5 rounded text-xs"
-          style={{ background: 'var(--btn-bg)', color: 'var(--text)' }}
-        >A+</button>
-      </div>
-
-      {/* Save */}
-      <button
-        onClick={onSave}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all hover:scale-105"
-        style={{ background: 'var(--accent)', color: 'var(--titlebar-bg)' }}
-      >
-        <Save className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">Save</span>
-      </button>
     </div>
   )
 }
@@ -387,7 +395,7 @@ function AIToolbar({ plan, tabId }: { plan: string; tabId: string }) {
 
   if (!canUseAI) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1 border-b text-xs" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'var(--toolbar-bg)' }}>
+      <div className="flex items-center gap-2 px-3 py-1 border-b text-xs" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'rgba(10, 10, 20, 0.7)' }}>
         <Wand2 className="w-3.5 h-3.5" />
         <span>AI tools — <a href="/pricing" className="underline" style={{ color: 'var(--accent)' }}>Upgrade to Basic</a></span>
       </div>
@@ -395,7 +403,7 @@ function AIToolbar({ plan, tabId }: { plan: string; tabId: string }) {
   }
 
   return (
-    <div className="flex items-center gap-1 px-3 py-1 border-b overflow-x-auto" style={{ borderColor: 'var(--border)', background: 'var(--toolbar-bg)' }}>
+    <div className="flex items-center gap-1 px-3 py-1 border-b overflow-x-auto" style={{ borderColor: 'var(--border)', background: 'rgba(10, 10, 20, 0.7)' }}>
       <Wand2 className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--accent)' }} />
       {AI_ACTIONS.map(a => (
         <button
@@ -433,7 +441,7 @@ function EditorPane({ tab, plan }: { tab: NoteTab; plan: string }) {
       </div>
       <div
         className="flex items-center justify-between px-3 py-1 text-xs border-t"
-        style={{ background: 'var(--toolbar-bg)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+        style={{ background: 'rgba(10, 10, 20, 0.7)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
       >
         <span>{FORMAT_LABELS[tab.format as Format] ?? tab.format}</span>
         <span>{tab.content.length} chars</span>
@@ -467,7 +475,7 @@ function PaneSystem({ plan }: { plan: string }) {
   return (
     <div className={`flex-1 grid ${gridClass} overflow-hidden`} style={{ gap: '1px', background: 'var(--splitter)' }}>
       {visibleTabs.map(tab => (
-        <div key={tab.id} className="overflow-hidden" style={{ background: 'var(--editor-bg)' }}>
+        <div key={tab.id} className="overflow-hidden" style={{ background: 'transparent' }}>
           <EditorPane tab={tab} plan={plan} />
         </div>
       ))}
@@ -490,7 +498,7 @@ function WorkspacePanel({ open, tabs, activeTabId, setActiveTab, updateTab, remo
       {open && (
         <motion.aside
           className="w-56 border-r flex flex-col overflow-hidden shrink-0"
-          style={{ background: 'var(--panel-bg)', borderColor: 'var(--border)' }}
+          style={{ background: 'rgba(10, 10, 20, 0.85)', backdropFilter: 'blur(8px)', borderColor: 'var(--border)' }}
           initial={{ width: 0, opacity: 0 }}
           animate={{ width: 224, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
@@ -558,24 +566,10 @@ export default function AppPage() {
 
   return (
     <div
-      className="flex flex-col h-screen overflow-hidden relative"
+      className="flex flex-col h-screen overflow-hidden"
       style={{ color: 'var(--text)' }}
     >
-      {/*
-        Animated gradient background — always rendered behind the editor area.
-        When the editor content div's opacity drops, this gradient becomes visible,
-        giving the "glass overlay on a colorful world" effect on web.
-      */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'linear-gradient(135deg, #0a0a1a 0%, #0d1b2a 25%, #0a0a1a 50%, #1a0a2a 75%, #0a0a1a 100%)',
-          backgroundSize: '400% 400%',
-          animation: 'gradientShift 8s ease infinite',
-        }}
-      />
-
-      {/* Toolbar — always fully opaque, sits above the gradient */}
+      {/* Toolbar — always fully opaque (has its own background) */}
       <Toolbar
         plan={plan}
         onSave={() => setSaveOpen(true)}
@@ -583,18 +577,14 @@ export default function AppPage() {
         onOpacityChange={handleOpacityChange}
       />
 
-      {/* Tab bar — always fully opaque */}
+      {/* Tab bar — always fully opaque (has its own background) */}
       <TabBar plan={plan} />
 
-      {/*
-        Editor content area — opacity applied HERE, not to body.
-        Toolbar/TabBar stay solid so the user can always control the app.
-        As opacity drops, the animated gradient above shows through.
-      */}
+      {/* Editor area — ONLY this div gets opacity. Toolbar/TabBar are siblings, always solid. */}
       <div
         className="flex flex-1 overflow-hidden"
         style={{
-          background: 'var(--app-bg)',
+          background: 'transparent',
           opacity: opacity / 100,
           transition: 'opacity 0.15s ease',
         }}

@@ -115,7 +115,7 @@ export const useEditorStore = create<EditorStore>()(
         activeTabId: state.activeTabId,
         layout: state.layout,
         theme: state.theme,
-        opacity: state.opacity,
+        // opacity is intentionally NOT persisted — always resets to 100 on load
         font: state.font,
         fontSize: state.fontSize,
       }),

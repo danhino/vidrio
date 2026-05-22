@@ -95,7 +95,7 @@ export function Editor({
     <div
       ref={containerRef}
       className="h-full w-full overflow-auto"
-      style={{ background: 'var(--editor-bg)', color: 'var(--editor-fg)' }}
+      style={{ background: 'transparent', color: 'var(--editor-fg)' }}
     />
   )
 }
