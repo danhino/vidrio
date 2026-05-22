@@ -423,12 +423,15 @@ function AIToolbar({ plan, tabId }: { plan: string; tabId: string }) {
 // ── Editor pane ───────────────────────────────────────────────────────────────
 
 function EditorPane({ tab, plan }: { tab: NoteTab; plan: string }) {
-  const { updateTab, theme, font, fontSize } = useEditorStore()
+  const { updateTab, theme, font, fontSize, opacity } = useEditorStore()
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <AIToolbar plan={plan} tabId={tab.id} />
-      <div className="flex-1 overflow-hidden">
+      <div
+        className="flex-1 overflow-hidden"
+        style={{ opacity: opacity / 100, transition: 'opacity 0.15s ease' }}
+      >
         <Editor
           content={tab.content}
           onChange={val => updateTab(tab.id, { content: val, isDirty: true })}
@@ -580,14 +583,10 @@ export default function AppPage() {
       {/* Tab bar — always fully opaque (has its own background) */}
       <TabBar plan={plan} />
 
-      {/* Editor area — ONLY this div gets opacity. Toolbar/TabBar are siblings, always solid. */}
+      {/* Editor area — transparent wrapper; opacity applied per-pane inside EditorPane */}
       <div
         className="flex flex-1 overflow-hidden"
-        style={{
-          background: 'transparent',
-          opacity: opacity / 100,
-          transition: 'opacity 0.15s ease',
-        }}
+        style={{ background: 'transparent' }}
       >
         {(plan === 'basic' || plan === 'pro') && (
           <WorkspacePanel

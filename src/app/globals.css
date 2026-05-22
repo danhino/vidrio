@@ -175,19 +175,18 @@
 }
 
 html, body {
-  min-height: 100vh;
+  min-height: 100vh !important;
   margin: 0;
   padding: 0;
   background: linear-gradient(
     135deg,
-    #0a0a1e 0%,
-    #0d1b2a 25%,
-    #1a0a2e 50%,
-    #0a1a2e 75%,
-    #0a0a1e 100%
+    #667eea 0%,
+    #764ba2 30%,
+    #f093fb 60%,
+    #4facfe 100%
   ) !important;
   background-size: 400% 400% !important;
-  animation: gradientShift 10s ease infinite !important;
+  animation: gradientShift 8s ease infinite !important;
 }
 
 body {
